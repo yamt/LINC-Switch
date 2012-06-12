@@ -104,6 +104,7 @@ sleep_and_send(MyKey, MinRate, MaxRate, PortRate, ThrottlingEts,
         timer:sleep(PauseMs),
         SendFun(Frame),
         History2 = sliding_window:bump_transfer(History1, FrameSize),
+        sliding_window:validate(History2),
         History2
     catch
         E1:E2 ->

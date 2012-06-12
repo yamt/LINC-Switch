@@ -25,7 +25,8 @@
          refresh/1,
          bump_transfer/2,
          total_transfer/1,
-         length_ms/1]).
+         length_ms/1,
+         validate/1]).
 
 -compile(export_all).
 
@@ -78,6 +79,14 @@ total_transfer(#sliding_window{total_transfer = TotalTransfer}) ->
 
 length_ms(#sliding_window{start = Start}) ->
     timer:now_diff(now(), Start) div 1000.
+
+validate(#sliding_window{size = Size, head = H, tail = T}) ->
+    case length(H) + length(T) of
+        Size ->
+            ok;
+        Other ->
+            throw({wrong_window_size, Size, Other})
+    end.
 
 %%--------------------------------------------------------------------
 %% Queue helpers
