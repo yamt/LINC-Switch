@@ -24,10 +24,7 @@ class L2Switch(RyuApp):
 
     def create_match(self, parser, fields):
         """Create OFP match struct from the list of fields."""
-        match = parser.OFPMatch()
-        for a in fields:
-            match.append_field(*a)
-        return match
+        return parser.OFPMatch(**fields)
 
     def create_flow_mod(self, datapath, priority,
                         table_id, match, instructions):
@@ -63,16 +60,18 @@ class L2Switch(RyuApp):
         datapath = msg.datapath
         ofproto = datapath.ofproto
         table_id = msg.table_id
-        fields = msg.match.fields
+
+        def get_field_value(msg, k):
+            match = msg.match
+            if k in match:
+                return match[k]
+            # should not happen with LINC
+            raise NotImplementedError, "packet parsing"
 
         # Extract fields
-        for f in fields:
-            if f.header == ofproto.OXM_OF_IN_PORT:
-                in_port = f.value
-            elif f.header == ofproto.OXM_OF_ETH_SRC:
-                eth_src = f.value
-            elif f.header == ofproto.OXM_OF_ETH_DST:
-                eth_dst = f.value
+        in_port = get_field_value(msg, 'in_port')
+        eth_src = get_field_value(msg, 'eth_src')
+        eth_dst = get_field_value(msg, 'eth_dst')
 
         # Install flow entries
         if table_id == 0:
@@ -88,8 +87,8 @@ class L2Switch(RyuApp):
         parser = datapath.ofproto_parser
         ofproto = datapath.ofproto
         match = self.create_match(parser,
-                                  [(ofproto.OXM_OF_IN_PORT, in_port),
-                                   (ofproto.OXM_OF_ETH_SRC, eth_src)])
+                                  {'in_port': in_port,
+                                   'eth_src': eth_src})
         goto = parser.OFPInstructionGotoTable(1)
         flow_mod = self.create_flow_mod(datapath, 123, 0, match, [goto])
         datapath.send_msg(flow_mod)
@@ -98,7 +97,7 @@ class L2Switch(RyuApp):
         """Install flow entry matching on eth_dst in table 1."""
         parser = datapath.ofproto_parser
         ofproto = datapath.ofproto
-        match = self.create_match(parser, [(ofproto.OXM_OF_ETH_DST, eth_src)])
+        match = self.create_match(parser, {'eth_dst': eth_src})
         output = parser.OFPActionOutput(in_port, ofproto.OFPCML_NO_BUFFER)
         write = parser.OFPInstructionActions(ofproto.OFPIT_WRITE_ACTIONS,
                                              [output])
