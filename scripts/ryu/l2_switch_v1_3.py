@@ -36,7 +36,7 @@ class L2Switch(RyuApp):
         flow_mod = datapath.ofproto_parser.OFPFlowMod(datapath, 0, 0, table_id,
                                                       ofproto.OFPFC_ADD, 0, 0,
                                                       priority,
-                                                      ofproto.OFPCML_NO_BUFFER,
+                                                      ofproto.OFP_NO_BUFFER,
                                                       ofproto.OFPP_ANY,
                                                       OFPG_ANY, 0,
                                                       match, instructions)
@@ -111,7 +111,7 @@ class L2Switch(RyuApp):
         ofproto = datapath.ofproto
         output_all = parser.OFPActionOutput(ofproto.OFPP_ALL,
                                             ofproto.OFPCML_NO_BUFFER)
-        packet_out = parser.OFPPacketOut(datapath, 0xffffffff,
+        packet_out = parser.OFPPacketOut(datapath, ofproto.OFP_NO_BUFFER,
                                          in_port,
                                          [output_all], data)
         datapath.send_msg(packet_out)
